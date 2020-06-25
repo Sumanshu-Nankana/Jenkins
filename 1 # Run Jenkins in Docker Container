@@ -1,0 +1,110 @@
+- Go to https://hub.docker.com/
+- Search for Jenkins
+- We could see 'Official Image' of Jenkins.
+- But, We could see NOTICE that - This image has been deprecated and the last version is very old i.e. 2.60.3
+- Also, it tell us that - we can user 'jenkins/jenkins:lts' image - Click on that link. This one is now officially maintained by     Jenkins community.
+
+- If we click on 'Tags' and then click on 'latest' - We could see the Version Number '2.241' which is Latest
+- So, we will use this image and name of image is 'jenkins/jenkins'
+
+- Open Terminal and execute 'docker run' using above image i.e. 'jenkins/jenkins'. If we click on 'documentation' it will give us   commands how to run this
+
+  docker run -p 8080:8080 -p 50000:50000 -d -v jenkins_home:/var/jenkins_home jenkins/jenkins:lts
+                    
+  - We need to expose the port- as by default Jenkins use 8080 port so, we expose the port -p 8080:8080
+  - We need to expose another port -p 50000:50000 for Jenkins master/slave communication
+  - We will run the docker in detached mode , thus we use -d
+  - We will Bind the Named volume , thus we use -v and give name jenkins_home (This folder will autmatically get created) on that 
+    path which we mention. We use volume basically to persist data on Jenkins. Otherwise, So that it can store our plugins,           credentials, and all build work. Otherwise, whenever we restart container - We need to setup Jenkins from scratch.
+  - And then we provide image name i.e. jenkins/jenkins ; we will use latest image tag Thus we also provided :lts
+    
+    
+- After running above command - it will pul the docker image and start the container, But we unable to see logs as we we run         docker in detached mode.
+
+- Now, if we do 'docker ps' we could see docker container is running
+
+ONTAINER ID        IMAGE                 COMMAND                  CREATED             STATUS              PORTS                                    NAMES
+2152a68ffed3    jenkins/jenkins:lts     "/sbin/tini -- /usr/…"   3 minutes ago       Up 3 minutes        0.0.0.0:8000->8000/tcp, 0.0.0.0:50000->50000/tcp, 8080/tcp   gallant_hertz
+            
+
+- Now we can copy the container ID and run below command to check docker logs
+  docker logs 2152a68ffed3
+    
+  and in logs, we could see 'Jenkins' started and it gives us Initial Admin Password
+
+
+In initial command, by mistake i gave 8000 port , instead of 8080, so I am unable to access localhost:8000
+I re-run same command using 8080 port and I changed 50000 to 500001 as 500001 is already in use.
+
+  docker run -p 8080:8080 -p 50001:50001 -d -v jenkins_home:/var/jenkins_home jenkins/jenkins:lts
+                    
+command run sucessfully, But when I did docker ps (I could not see new container) - I still see old container
+Lets try to stop old container.
+
+docker stop container_id  (This gives me perission error) even with sudo command
+So, i executed:  sudo aa-remove-unknown
+and after that docker stop container_id  (stop the container)
+
+Now, if we do docker ps (we could not see any container Up and running)
+
+Now, again run the docker and this time with correct port 8080 and 50000 - to see if it works.
+
+and Now, if we try to access localhost:8080 (I am able to access) and it's asking for INITIAL ADMIN PASSWORD
+    
+which we can get from logs
+
+docker logs container_id
+
+But- this time, I am unable to see any logs....(May be I am running same page 2nd time)
+but, there is no directory /var/jenkins_home ==> so unable to get initial admin key.
+
+
+==============================================
+
+su root
+password: root
+
+docker run -p 8080:8080 p- 50000:50000 -d -v /home/sumanshu/Desktop/Jenkins_Home:/var/jenkins_home jenkins/jenkins:lts
+Basically it will create a folder Jenkins_Home on Desktop and start writing the things
+
+LefthandSide details (Is one which we want)
+RighthanSide details (i.e. after colon) - is the one which is Jenkins default settings
+
+this is the reason, when I have 8000:8000 (I am unable to access Jenkins) - Because I am saying I want to run jenkins on 8000 and by taking settings of 8000 (which is wrong) - we need to mention 8000:8080 (If we need to run jenkins on port 8000)
+
+But if we run above command - it will not write anything to folder and even not started the container
+So, once empty folder created , run below command
+chown -r 1000:1000 /home/sumanshu/Desktop/Jenkins_Home
+    
+Now, run again same docker run command - Now, it will write the content to Jenkins_Home (folder on Desktop)
+docker ps (even container is Up now)
+docker logs container_id (to see initial admin password)
+
+-----------
+Jenkins initial setup is required. An admin user has been created and a password generated.
+Please use the following password to proceed to installation:
+
+3ad6b53778c54f32b63461495f229643
+
+This may also be found at: /var/jenkins_home/secrets/initialAdminPassword
+------------
+
+It shows we can found Initial password at /var/jenkins_home/secrets/initialAdminPassword
+But there is no such directory, But we can find everything at /home/sumanshu/Desktop/Jenkins/Home/secrets/initialAdminPassword
+
+As we mapped this directory with /var/jenkins_home
+
+Let's created a user example -
+
+User: sumanshu
+Password: sumanshu
+
+===========================================
+
+If we click on New ITEM -- we could see different Items
+
+FreeStyle Project = used for simple, single task
+Pipeline = we can configure whole dleivery flow (test, build, deploy etc) - this is for a single branch
+MultiBranch pipeline = This can apply on multiple branches of same repository.
+
+=====
